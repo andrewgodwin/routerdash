@@ -1,0 +1,86 @@
+/* Body styles */
+/*
+    Body layout is a 4-column grid. Columns are 250, spacing 50.
+    Two cols is 550. Three cols is 850. Four is 1150.
+*/
+
+body {
+    font-size: 16px;
+    min-height: 100%;
+    font-family: Helvetica, Arial, sans-serif;
+    height: 100%;
+}
+
+/* General page layout */
+
+p {
+    line-height: 160%;
+    margin-bottom: 1.5em;
+}
+
+strong,
+b {
+    font-weight: bold;
+}
+
+em {
+    font-style: italic;
+}
+
+a {
+    text-decoration: none;
+    color: #3F6492;
+}
+    a:hover {
+        text-decoration: underline;
+    }
+
+/* Header */
+
+header {
+    background: #23457B;
+    color: white;
+    overflow: hidden;
+}
+    header h1 {
+        float: left;
+        margin: 10px 20px;
+        color: #fff;
+        font-size: 18px;
+    }
+    header .stats li {
+        float: right;
+        margin: 10px 20px 10px 0;
+    }
+
+/* Content */
+
+.content {
+    margin: 10px 20px;
+}
+
+
+h2 {
+    font-size: 220%;
+    font-family: alte_din;
+    color: #0e232e;
+    margin: 20px 0 12px 0;
+}
+
+
+/* Device list */
+
+.devices .device {
+    margin: 10px 0;
+}
+    .device h3 {
+        font-weight: bold;
+        font-size: 130%;
+        display: inline;
+        margin: 0 15px 0 0;
+    }
+    .device h4 {
+        font-size: 90%;
+        color: #9C9C9C;
+        display: inline;
+    }

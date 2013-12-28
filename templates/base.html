@@ -1,0 +1,57 @@
+<!doctype html>
+<html>
+    <head>
+        <title>{% block title %}{% endblock %}</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="alternate" type="application/atom+xml"  href="http://www.website.com/feed/" title="Depth Buffer Atom Feed">
+        <link rel="alternate" type="application/rss+xml"  href="http://www.website.com/feed/rss2/" title="Depth Buffer RSS Feed">
+        <link rel="stylesheet" href="/static/css/reset.css" type="text/css" media="screen" />
+        <link rel="stylesheet" href="/static/css/style.css" type="text/css" media="screen" />
+        <link rel="stylesheet" href="/static/fonts/alte_din/stylesheet.css" type="text/css" media="screen" />
+        <link rel="stylesheet" href="/static/fonts/font_awesome/stylesheet.css" type="text/css" media="screen" />
+        <script src="/static/js/jquery-1.10.2.min.js"></script>
+        <script>
+            var triggerUpdate = function () {
+                updateSpeeds();
+                updateDevices();
+                setTimeout(triggerUpdate, 2000);
+            }
+            var updateSpeeds = function () {
+                $.getJSON("/ajax/speeds/", function (data) {
+                    $(".rx-speed").text(data[2]);
+                    $(".tx-speed").text(data[3]);
+                });
+            }
+            var updateDevices = function () {
+                $.getJSON("/ajax/devices/", function (data) {
+                    $(".devices").html("");
+                    for (var i = 0; i < data.length; i++) {
+                        var device = data[i];
+                        var html = "<div class='device'><h3>" + device.name + "</h3><h4>" + device.mac + "</h4>";
+                        if (device.wireless) {
+                            html += "WIRELESS"
+                        }
+                        html += "</div>";
+                        $(".devices").append(html);
+                    }
+                });
+            }
+            $(triggerUpdate);
+        </script>
+        {% block extra_head %}{% endblock %}
+    </head>
+    <body>
+        <header>
+            <h1>{% block header_title %}Menu{% endblock %}</h1>
+            <ul class="stats">
+                <li><i class="fa fa-chevron-circle-down"></i> <span class="rx-speed">...</span></li>
+                <li><i class="fa fa-chevron-circle-up"></i> <span class="tx-speed">...</span></li>
+            </ul>
+        </header>
+        <div class="content">
+            {% block content %}
+            {% endblock %}
+        </div>
+    </body>
+</html>
