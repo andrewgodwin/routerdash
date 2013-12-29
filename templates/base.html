@@ -45,12 +45,12 @@
                         if (device.ip) {
                             html += "<div class='info ip'>IP: " + device.ip + "</div>";
                         }
+                        if (device.rx_speed_human != undefined) {
+                            html += "<div class='info speed'><i class='fa fa-chevron-circle-up'></i> " + device.rx_speed_human + " <i class='fa fa-chevron-circle-down'></i> " + device.tx_speed_human + "</div>";
+                        }
                         if (device.wireless) {
                             normalised_signal = Math.max(0, Math.min(70, (90 + device.wireless.signal))) / 70.0
                             html += "<div class='info signal'>Signal: <div class='progress'><div class='bar' style='width: " + (normalised_signal * 100) + "%'></div><span>" + device.wireless.tx_bitrate_human + "</span></div></div>";
-                        }
-                        if (device.rx_speed_human != undefined) {
-                            html += "<div class='info speed'><i class='fa fa-chevron-circle-up'></i> " + device.rx_speed_human + " <i class='fa fa-chevron-circle-down'></i> " + device.tx_speed_human + "</div>";
                         }
                         html += "</div>";
                         $(".devices").append(html);

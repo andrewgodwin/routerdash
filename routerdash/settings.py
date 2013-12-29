@@ -85,3 +85,16 @@ STATIC_ROOT = os.path.join(BASE_DIR, "static")
 TEMPLATE_DIRS = (
     os.path.join(BASE_DIR, "templates"),
 )
+
+
+# Network settings
+EXTERNAL_INTERFACE = "eth0"
+BRIDGE_INTERFACE = "br0"
+WIRELESS_INTERFACES = ["wlan0"]
+
+
+# Local overrides
+try:
+    from local_settings import *
+except ImportError:
+    pass

@@ -49,23 +49,27 @@ def get_devices(interface):
 
     Will also include wireless info if it can be found.
     """
-    # Use the ARP table to find "active" devices
+    # Use the ARP table plus the wireless stations list to find "active" devices
     devices = {}
-    with open("/proc/net/arp") as fh:
-        for line in fh:
-            if line.startswith("IP address"):
-                continue
-            ip, hw, flags, mac, mask, this_interface = line.split()
-            mac = mac.lower()
-            if mac == "00:00:00:00:00:00":
-                continue
-            if interface == this_interface and mac not in devices:
-                devices[mac] = {
-                    "mac": mac,
-                    "ip": ip,
-                    "name": None,
-                    "manufacturer": get_manufacturer(mac),
-                }
+    stations = get_stations("wlan0")
+    output = subprocess.check_output(["ip", "neighbour", "show", "dev", interface])
+    for line in output.split("\n"):
+        if not line.strip():
+            continue
+        try:
+            ip, mac_type, mac, state = line.split(" ")
+        except ValueError:
+            continue
+        mac = mac.lower()
+        if mac == "00:00:00:00:00:00":
+            continue
+        if state.lower() in ("reachable", "delay", "probe") or mac in stations:
+            devices[mac] = {
+                "mac": mac,
+                "ip": ip,
+                "name": None,
+                "manufacturer": get_manufacturer(mac),
+            }
     # Use the leases file to get more info
     with open("/var/lib/misc/dnsmasq.leases") as fh:
         for line in fh:
@@ -77,14 +81,23 @@ def get_devices(interface):
                 devices[mac]['name'] = None if name == "*" else name
                 devices[mac]['lease_expires'] = expires
     # Run get_stations and add in any wireless info
-    stations = get_stations("wlan0")
     for mac, device in devices.items():
         if mac in stations:
             device['wireless'] = stations[mac]
-            if "rx_speed" in device['wireless']:
-                device["rx_speed"] = device["wireless"]["rx_speed"]
-            if "tx_speed" in device['wireless']:
-                device["tx_speed"] = device["wireless"]["tx_speed"]
+    # Use the traffic monitor to add real traffic info, if possible
+    if os.path.exists("/tmp/traffic-%s" % interface):
+        for device in devices.values():
+            device['rx_speed'] = 0
+            device['tx_speed'] = 0
+        with open("/tmp/traffic-%s" % interface) as fh:
+            for line in fh:
+                if line.startswith("ip "):
+                    continue
+                ip, rx_local, rx_remote, tx_local, tx_remote, last_seen = line.split()
+                for device in devices.values():
+                    if device['ip'] == ip:
+                        device['rx_speed'] = calc_speed("ip-%s-rx" % ip, int(rx_remote))
+                        device['tx_speed'] = calc_speed("ip-%s-tx" % ip, int(tx_remote))
     return devices
 
 
@@ -125,11 +138,13 @@ def get_manufacturer(mac):
     """
     Gets the manufacturer of a mac address, with caching.
     """
+    if not getattr(settings, "MAC_API_KEY", None):
+        return "Unknown"
     stripped_mac = mac.lower().replace(":","")
     cache_file = "/tmp/mac-manu-%s" % stripped_mac
     try:
         if not os.path.exists(cache_file):
-            result = json.loads(urllib2.urlopen("http://www.macvendorlookup.com/api/CFPDNNw/%s/" % stripped_mac).read())
+            result = json.loads(urllib2.urlopen("http://www.macvendorlookup.com/api//%s/" % (settings.MAC_API_KEY, stripped_mac)).read())
             manufacturer = result[0]['company']
             with open(cache_file, "w") as fh:
                 fh.write(manufacturer + "\n")

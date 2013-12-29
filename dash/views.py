@@ -1,6 +1,7 @@
 import json
 from django.shortcuts import render
 from django.http import HttpResponse
+from django.conf import settings
 from .calculations import get_speeds, get_devices
 
 
@@ -17,14 +18,14 @@ def home(request):
 
 
 def ajax_speeds(request):
-    rx, tx = get_speeds("eth0")
+    rx, tx = get_speeds(settings.EXTERNAL_INTERFACE)
     rx_string = human_speed(rx)
     tx_string = human_speed(tx)
     return json_response([rx, tx, rx_string, tx_string])
 
 
 def ajax_devices(request):
-    devices = get_devices("br0")
+    devices = get_devices(settings.BRIDGE_INTERFACE)
     response = []
     for device in devices.values():
         if "rx_speed" in device:
