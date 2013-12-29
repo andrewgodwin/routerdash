@@ -3,6 +3,7 @@ import json
 import time
 import subprocess
 import urllib2
+from django.conf import settings
 
 from .models import BytesRecord
 
@@ -144,7 +145,7 @@ def get_manufacturer(mac):
     cache_file = "/tmp/mac-manu-%s" % stripped_mac
     try:
         if not os.path.exists(cache_file):
-            result = json.loads(urllib2.urlopen("http://www.macvendorlookup.com/api//%s/" % (settings.MAC_API_KEY, stripped_mac)).read())
+            result = json.loads(urllib2.urlopen("http://www.macvendorlookup.com/api/%s/%s/" % (settings.MAC_API_KEY, stripped_mac)).read())
             manufacturer = result[0]['company']
             with open(cache_file, "w") as fh:
                 fh.write(manufacturer + "\n")
