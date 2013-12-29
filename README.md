@@ -12,3 +12,8 @@ and the local network on a series of other interfaces all connected to a single 
 
 To get proper traffic info, it also expects the traffic-logger.py script to be running against
 the bridge and writing to /tmp/traffic-br0 (or whatever the bridge is called).
+
+## License
+
+The portions of the code which are mine are released under the 3-clause BSD license
+(http://opensource.org/licenses/BSD-3-Clause)
