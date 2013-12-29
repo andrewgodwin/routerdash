@@ -1,5 +1,29 @@
+import os
+import json
 import time
 import subprocess
+import urllib2
+
+from .models import BytesRecord
+
+
+def calc_speed(key, value, period=5):
+    """
+    Generic function to take a number of bytes as a current total and return
+    the rate of change of that total per second.
+    """
+    # Write a row for now if there's not been data for more than a second
+    now_time = time.time()
+    if not BytesRecord.objects.filter(key=key, time__gte=(now_time - 1)).exists():
+        BytesRecord.objects.create(key=key, time=now_time, value=value)
+        if BytesRecord.objects.filter(key=key).count() == 1:
+            return None
+    # Fetch the oldest row in there and calculate speed from that
+    old_record = BytesRecord.objects.filter(key=key).order_by("time")[0]
+    speed = (value - old_record.value) / float(now_time - old_record.time)
+    # Delete all rows that are too old
+    BytesRecord.objects.filter(key=key, time__lt=(now_time - period)).delete()
+    return speed
 
 
 def get_speeds(interface):
@@ -7,30 +31,15 @@ def get_speeds(interface):
     Gets an approximate tx/rx speed for the given interface, in bytes per second.
     """
     # Get the current values
-    now_time = time.time()
     with open("/sys/class/net/%s/statistics/rx_bytes" % interface) as fh:
         rx_bytes = int(fh.read().strip())
     with open("/sys/class/net/%s/statistics/tx_bytes" % interface) as fh:
         tx_bytes = int(fh.read().strip())
-    # See if there's old values to compare against
-    write_new = True
-    try:
-        with open("/tmp/rdash-%s-speeds" % interface) as fh:
-            old_time, old_rx, old_tx = fh.read().strip().split()
-        delta = now_time - float(old_time)
-        rx_delta = rx_bytes - int(old_rx)
-        tx_delta = tx_bytes - int(old_tx)
-        rx_speed = rx_delta / delta
-        tx_speed = tx_delta / delta
-    except IOError:
-        rx_speed = None
-        tx_speed = None
-    # Write to temp file if we need to
-    if write_new:
-        with open("/tmp/rdash-%s-speeds" % interface, "w") as fh:
-            fh.write("%s %s %s\n" % (now_time, rx_bytes, tx_bytes))
     # Return speeds
-    return rx_speed, tx_speed
+    return (
+        calc_speed("iface-%s-rx" % interface, rx_bytes),
+        calc_speed("iface-%s-tx" % interface, tx_bytes),
+    )
 
 
 def get_devices(interface):
@@ -48,16 +57,34 @@ def get_devices(interface):
                 continue
             ip, hw, flags, mac, mask, this_interface = line.split()
             mac = mac.lower()
-            if interface == this_interface:
+            if mac == "00:00:00:00:00:00":
+                continue
+            if interface == this_interface and mac not in devices:
                 devices[mac] = {
                     "mac": mac,
-                    "name": get_name(mac),
+                    "ip": ip,
+                    "name": None,
+                    "manufacturer": get_manufacturer(mac),
                 }
+    # Use the leases file to get more info
+    with open("/var/lib/misc/dnsmasq.leases") as fh:
+        for line in fh:
+            if not line.strip():
+                continue
+            expires, mac, ip, name, client_id = line.split()
+            mac = mac.lower()
+            if mac in devices:
+                devices[mac]['name'] = None if name == "*" else name
+                devices[mac]['lease_expires'] = expires
     # Run get_stations and add in any wireless info
     stations = get_stations("wlan0")
     for mac, device in devices.items():
         if mac in stations:
             device['wireless'] = stations[mac]
+            if "rx_speed" in device['wireless']:
+                device["rx_speed"] = device["wireless"]["rx_speed"]
+            if "tx_speed" in device['wireless']:
+                device["tx_speed"] = device["wireless"]["tx_speed"]
     return devices
 
 
@@ -67,7 +94,7 @@ def get_stations(interface):
     with some stats.
     """
     output = subprocess.check_output(["iw", interface, "station", "dump"])
-    stations = []
+    stations = {}
     station = {}
     for line in output.split("\n"):
         line = line.strip()
@@ -80,17 +107,35 @@ def get_stations(interface):
             station = {
                 "mac": mac,
             }
-        elif line.startswith("signal avg:"):
-            station['signal'] = line.split()[1]
+        elif line.startswith("signal:"):
+            station['signal'] = int(line.split()[1])
+        elif line.startswith("rx bytes:"):
+            station['rx_speed'] = calc_speed("station-%s-rx" % station['mac'], int(line.split()[2]))
+        elif line.startswith("tx bytes:"):
+            station['tx_speed'] = calc_speed("station-%s-tx" % station['mac'], int(line.split()[2]))
+        elif line.startswith("tx bitrate:"):
+            station['tx_bitrate'] = float(line.split()[2])
+            station['tx_bitrate_human'] = line.split()[2] + " Mb/s"
     if station:
         stations[station['mac']] = station
     return stations
 
 
-def get_name(mac):
+def get_manufacturer(mac):
     """
-    Tries to look up a friendly name for a MAC address.
+    Gets the manufacturer of a mac address, with caching.
     """
-    if mac == "70:18:8b:ce:6b:a7":
-        return "charmander"
-    return "unknown"
+    stripped_mac = mac.lower().replace(":","")
+    cache_file = "/tmp/mac-manu-%s" % stripped_mac
+    try:
+        if not os.path.exists(cache_file):
+            result = json.loads(urllib2.urlopen("http://www.macvendorlookup.com/api/CFPDNNw/%s/" % stripped_mac).read())
+            manufacturer = result[0]['company']
+            with open(cache_file, "w") as fh:
+                fh.write(manufacturer + "\n")
+        else:
+            with open(cache_file) as fh:
+                manufacturer = fh.read().strip()
+        return manufacturer
+    except (IndexError, KeyError, ValueError):
+        return "Unknown"

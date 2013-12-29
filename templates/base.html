@@ -12,9 +12,12 @@
         <link rel="stylesheet" href="/static/fonts/font_awesome/stylesheet.css" type="text/css" media="screen" />
         <script src="/static/js/jquery-1.10.2.min.js"></script>
         <script>
+            var runUpdates = true;
             var triggerUpdate = function () {
-                updateSpeeds();
-                updateDevices();
+                if (runUpdates) {
+                    updateSpeeds();
+                    updateDevices();
+                }
                 setTimeout(triggerUpdate, 2000);
             }
             var updateSpeeds = function () {
@@ -28,9 +31,26 @@
                     $(".devices").html("");
                     for (var i = 0; i < data.length; i++) {
                         var device = data[i];
-                        var html = "<div class='device'><h3>" + device.name + "</h3><h4>" + device.mac + "</h4>";
+                        var html = "<div class='device'><h3>";
                         if (device.wireless) {
-                            html += "WIRELESS"
+                            html += "<i class='fa fa-signal'></i>";
+                        } else {
+                            html += "<i class='fa fa-exchange'></i>";
+                        }
+                        if (device.name) {
+                            html += "" + device.name + "</h3><h4>" + device.mac + "</h4>";
+                        } else {
+                            html += "" + device.mac + "</h3><h4>" + device.manufacturer + "</h4>";
+                        }
+                        if (device.ip) {
+                            html += "<div class='info ip'>IP: " + device.ip + "</div>";
+                        }
+                        if (device.wireless) {
+                            normalised_signal = Math.max(0, Math.min(70, (90 + device.wireless.signal))) / 70.0
+                            html += "<div class='info signal'>Signal: <div class='progress'><div class='bar' style='width: " + (normalised_signal * 100) + "%'></div><span>" + device.wireless.tx_bitrate_human + "</span></div></div>";
+                        }
+                        if (device.rx_speed_human != undefined) {
+                            html += "<div class='info speed'><i class='fa fa-chevron-circle-up'></i> " + device.rx_speed_human + " <i class='fa fa-chevron-circle-down'></i> " + device.tx_speed_human + "</div>";
                         }
                         html += "</div>";
                         $(".devices").append(html);
