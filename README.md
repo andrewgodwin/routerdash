@@ -2,6 +2,8 @@
 
 This is an experimental Django-based UI for my home router (which is a small Shuttle PC running Ubuntu).
 
+![Screenshot of the UI](http://aeracode.org/static/uploads/router-screen.png)
+
 Don't expect this code to work on your system unless you have a surprisingly similar setup to me
 (see notes below). This won't do much on normal development computers.
 
