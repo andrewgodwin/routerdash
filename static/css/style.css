@@ -70,10 +70,13 @@ h2 {
 
 /* Device list */
 
+.devices {
+    margin-left: -15px;
+}
 .devices .device {
-    margin: 10px 20px 0 0;
+    margin: 10px 0 0 15px;
     display: inline-block;
-    width: 250px;
+    width: 230px;
     vertical-align: top;
 }
     .device h3 {
