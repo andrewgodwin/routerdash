@@ -52,7 +52,7 @@ def get_devices(interface):
     """
     # Use the ARP table plus the wireless stations list to find "active" devices
     devices = {}
-    stations = get_stations("wlan0")
+    stations = get_stations(settings.WIRELESS_INTERFACES)
     output = subprocess.check_output(["ip", "neighbour", "show", "dev", interface])
     for line in output.split("\n"):
         if not line.strip():
@@ -102,36 +102,37 @@ def get_devices(interface):
     return devices
 
 
-def get_stations(interface):
+def get_stations(interfaces):
     """
     Returns current WiFi stations seen in the given interface,
     with some stats.
     """
-    output = subprocess.check_output(["iw", interface, "station", "dump"])
     stations = {}
     station = {}
-    for line in output.split("\n"):
-        line = line.strip()
-        if not line:
-            continue
-        if line.startswith("Station "):
-            if station:
-                stations[station['mac']] = station
-            mac = line.split()[1].lower()
-            station = {
-                "mac": mac,
-            }
-        elif line.startswith("signal:"):
-            station['signal'] = int(line.split()[1])
-        elif line.startswith("rx bytes:"):
-            station['rx_speed'] = calc_speed("station-%s-rx" % station['mac'], int(line.split()[2]))
-        elif line.startswith("tx bytes:"):
-            station['tx_speed'] = calc_speed("station-%s-tx" % station['mac'], int(line.split()[2]))
-        elif line.startswith("tx bitrate:"):
-            station['tx_bitrate'] = float(line.split()[2])
-            station['tx_bitrate_human'] = line.split()[2] + " Mb/s"
-    if station:
-        stations[station['mac']] = station
+    for interface in interfaces:
+        output = subprocess.check_output(["iw", interface, "station", "dump"])
+        for line in output.split("\n"):
+            line = line.strip()
+            if not line:
+                continue
+            if line.startswith("Station "):
+                if station:
+                    stations[station['mac']] = station
+                mac = line.split()[1].lower()
+                station = {
+                    "mac": mac,
+                }
+            elif line.startswith("signal:"):
+                station['signal'] = int(line.split()[1])
+            elif line.startswith("rx bytes:"):
+                station['rx_speed'] = calc_speed("station-%s-rx" % station['mac'], int(line.split()[2]))
+            elif line.startswith("tx bytes:"):
+                station['tx_speed'] = calc_speed("station-%s-tx" % station['mac'], int(line.split()[2]))
+            elif line.startswith("tx bitrate:"):
+                station['tx_bitrate'] = float(line.split()[2])
+                station['tx_bitrate_human'] = line.split()[2] + " Mb/s"
+        if station:
+            stations[station['mac']] = station
     return stations
 
 

@@ -90,7 +90,7 @@ TEMPLATE_DIRS = (
 # Network settings
 EXTERNAL_INTERFACE = "eth0"
 BRIDGE_INTERFACE = "br0"
-WIRELESS_INTERFACES = ["wlan0"]
+WIRELESS_INTERFACES = ["wlan0", "wlan1"]
 
 
 # Local overrides
