@@ -136,7 +136,8 @@ h2 {
         }
     .interface-label {
         position: absolute;
-        top: 0px;
+        top: 12px;
         right: 0px;
         font-size: 12px;
+        color: #888;
     }
