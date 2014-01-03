@@ -85,6 +85,7 @@ def get_devices(interface):
     for mac, device in devices.items():
         if mac in stations:
             device['wireless'] = stations[mac]
+            device['interface'] = stations[mac]['interface']
     # Use the traffic monitor to add real traffic info, if possible
     if os.path.exists("/tmp/traffic-%s" % interface):
         for device in devices.values():
@@ -99,6 +100,9 @@ def get_devices(interface):
                     if device['ip'] == ip:
                         device['rx_speed'] = calc_speed("ip-%s-rx" % ip, int(rx_remote))
                         device['tx_speed'] = calc_speed("ip-%s-tx" % ip, int(tx_remote))
+    # Label interfaces if they have a label
+    if device.get("interface", None) in settings.INTERFACE_LABELS:
+        device["interface_label"] = settings.INTERFACE_LABELS[device['interface']]
     return devices
 
 
@@ -121,6 +125,7 @@ def get_stations(interfaces):
                 mac = line.split()[1].lower()
                 station = {
                     "mac": mac,
+                    "interface": interface,
                 }
             elif line.startswith("signal:"):
                 station['signal'] = int(line.split()[1])

@@ -133,3 +133,9 @@ h2 {
             text-shadow: 0 0 2px #444;
             font-size: 12px;
         }
+    .interface-label {
+        position: absolute;
+        top: 0px;
+        right: 0px;
+        font-size: 12px;
+    }

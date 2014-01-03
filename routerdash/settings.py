@@ -91,6 +91,10 @@ TEMPLATE_DIRS = (
 EXTERNAL_INTERFACE = "eth0"
 BRIDGE_INTERFACE = "br0"
 WIRELESS_INTERFACES = ["wlan0", "wlan1"]
+INTERFACE_LABELS = {
+    "wlan0": "5GHz",
+    "wlan1": "2.4GHz",
+}
 
 
 # Local overrides

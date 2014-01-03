@@ -32,6 +32,9 @@
                     for (var i = 0; i < data.length; i++) {
                         var device = data[i];
                         var html = "<div class='device'><h3>";
+                        if (device.interface_label) {
+                            html += "<div class='interface-label'>" + device.interface_label + "</div>";
+                        }
                         if (device.wireless) {
                             html += "<i class='fa fa-signal'></i>";
                         } else {
