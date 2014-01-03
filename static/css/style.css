@@ -78,6 +78,7 @@ h2 {
     display: inline-block;
     width: 230px;
     vertical-align: top;
+    position: relative;
 }
     .device h3 {
         font-size: 120%;
