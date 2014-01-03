@@ -101,8 +101,10 @@ def get_devices(interface):
                         device['rx_speed'] = calc_speed("ip-%s-rx" % ip, int(rx_remote))
                         device['tx_speed'] = calc_speed("ip-%s-tx" % ip, int(tx_remote))
     # Label interfaces if they have a label
-    if device.get("interface", None) in settings.INTERFACE_LABELS:
-        device["interface_label"] = settings.INTERFACE_LABELS[device['interface']]
+    for mac, device in devices.items():
+        interface = device.get("interface", None)
+        if interface in settings.INTERFACE_LABELS:
+            device["interface_label"] = settings.INTERFACE_LABELS[interface]
     return devices
 
 
